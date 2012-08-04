@@ -2,6 +2,9 @@ $(function() {
 var canvas = document.getElementById('canvas');
 var context = canvas.getContext('2d');
 
+var thisLoop, lastLoop;
+var basicCounter = 0;
+
 endText = "GAME OVER!!!"
 endTextWidth = 200;
 
@@ -23,7 +26,7 @@ var colors = {
 	"1" : "orange", //orange
 	"2" : "rgb(100,200,100)", //green
 	"3" : "rgba(50,100,50,.5)", //clearish/grey
-	"4" : "rgb(60,70,80)" //bluish
+	"4" : "rgb(90,120,190)" //bluish
 }
 
 
@@ -97,10 +100,13 @@ var brickWidth = canvas.width/bricksPerRow;
 // 1 is orange, 2 is green, 3, is gray, 0 is empty
 var bricks = [
 	[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
-	[1,1,1,2,1,1,1,1,0,2,1,1,1,1,1,1],
+	[1,1,1,2,1,1,1,1,0,2,1,1,1,0,2,1],
 	[1,1,1,3,1,1,1,1,1,1,1,0,1,1,1,1],
-	[1,1,1,0,1,1,1,1,0,1,1,0,1,1,1,1],
-	[1,1,1,1,1,1,0,1,1,1,1,1,1,1,1,1]
+	[1,1,2,1,1,1,1,0,1,1,1,1,1,1,1,1],
+	[1,1,1,2,1,3,1,1,0,2,3,1,3,0,3,1],
+	[1,1,1,3,1,1,1,1,1,1,1,0,1,1,1,1],
+	[1,1,1,0,1,1,1,1,0,1,1,0,1,3,1,1],
+	[1,2,1,2,1,1,0,1,1,1,1,1,1,3,1,1]
 ]
 
 function createBricks(){
@@ -124,12 +130,23 @@ function drawBrick(x,y,type){
 }
 
 function loopCycle(){
+	thisLoop = new Date;
 	//This is going to run at 50fps and redraw everything after clearing.
 	clearScreen();
+	createBricks();
 	moveBall();
 	movePaddle();
 	drawPaddle();
 	drawBall();
+
+	var fps = 1000 / (thisLoop - lastLoop);
+	basicCounter++
+	if (basicCounter > 100){
+		basicCounter = 0;
+		console.log(fps);
+	}
+	lastLoop = thisLoop;
+
 }
 
 function clearScreen(){
@@ -161,7 +178,7 @@ function startGame(){
 
 	//mousemove listener.
 	$('#canvas').mousemove(function(evt){
-		movePaddle(evt.layerX);
+		movePaddle(evt.pageX - this.offsetLeft);
 	});
 
 }
