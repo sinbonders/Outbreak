@@ -2,6 +2,9 @@ $(function() {
 var canvas = document.getElementById('canvas');
 var context = canvas.getContext('2d');
 
+endText = "GAME OVER!!!"
+endTextWidth = 200;
+
 var paddleX = 200;
 var paddleY = 460;
 
@@ -10,20 +13,81 @@ var paddleHeight = 15;
 
 var paddleDeltaX = 0;
 var paddleDeltaY = 0;
+var paddleSpeedX = 10;
 
 var ballX = 300;
 var ballY = 300;
 var ballRadius = 10;
 
+var colors = {
+	"1" : "orange", //orange
+	"2" : "rgb(100,200,100)", //green
+	"3" : "rgba(50,100,50,.5)", //clearish/grey
+	"4" : "rgb(60,70,80)" //bluish
+}
+
+
 function drawPaddle(){
+	context.fillStyle = colors['2'];
 	context.fillRect(paddleX, paddleY, paddleWidth, paddleHeight);
+}
+
+function movePaddle(x){
+	if (x){
+		paddleX = x - (paddleWidth / 2);
+		return;
+	}
+	if (paddleMove =='LEFT'){
+		paddleDeltaX = -paddleSpeedX;
+	}
+	else if (paddleMove == 'RIGHT'){
+		paddleDeltaX = paddleSpeedX;
+	}
+	else{
+		paddleDeltaX = 0;
+	}
+	if (paddleX + paddleDeltaX < 0 || paddleX + paddleDeltaX +paddleWidth >canvas.width ){
+		paddleDeltaX = 0;
+	}
+	paddleX = paddleX + paddleDeltaX;
 }
 
 function drawBall(){
 	context.beginPath();
 	context.arc(ballX,ballY,ballRadius,0,Math.PI*2,true);
-
+	context.fillStyle = colors['4'];
 	context.fill();
+}
+
+function moveBall(){
+	var ballBottomY = ballY + ballDeltaY + ballRadius
+	var ballTopY = ballY + ballDeltaY - ballRadius;
+	var ballLeftX = ballX + ballDeltaX - ballRadius;
+	var ballRightX = ballX + ballDeltaX + ballRadius;
+
+	//check for Paddle hit
+	if (ballBottomY >= paddleY && ballBottomY <= paddleY + (paddleHeight / 2)){ // If the ball is at paddleY but not more than halfway.
+		if (ballX + ballDeltaX >= paddleX && ballX + ballDeltaX <= paddleX +paddleWidth){ // and that shit is within the X of paddleX.
+			ballDeltaY = -ballDeltaY;
+			//to do, change X based on distance of ball from center of paddle.
+		}
+	}
+
+	//Flip directions if we get < 0 on Y. Likewise for X.
+	if (ballTopY < 0){
+		ballDeltaY = -ballDeltaY;
+	}
+
+	if (ballBottomY > canvas.height){
+		endGame();
+	}
+
+	if ((ballLeftX < 0) || (ballRightX > canvas.width)){
+		ballDeltaX = -ballDeltaX;
+	}
+
+	ballX = ballX + ballDeltaX;
+	ballY = ballY + ballDeltaY;
 }
 
 var bricksPerRow = 16;
@@ -38,12 +102,6 @@ var bricks = [
 	[1,1,1,0,1,1,1,1,0,1,1,0,1,1,1,1],
 	[1,1,1,1,1,1,0,1,1,1,1,1,1,1,1,1]
 ]
-
-var colors = {
-	"1" : "orange",
-	"2" : "rgb(100,200,100)",
-	"3" : "rgba(50,100,50,.5)"
-}
 
 function createBricks(){
 	for (var i=0; i < bricks.length; i++){
@@ -65,6 +123,57 @@ function drawBrick(x,y,type){
 	}
 }
 
+function loopCycle(){
+	//This is going to run at 50fps and redraw everything after clearing.
+	clearScreen();
+	moveBall();
+	movePaddle();
+	drawPaddle();
+	drawBall();
+}
+
+function clearScreen(){
+	context.clearRect(0,0,canvas.width,canvas.height);
+}
+
+function startGame(){
+	ballDeltaY = -4;
+	ballDeltaX = -2;
+	paddleMove = 'NONE';
+	paddleDeltaX = 0;
+	gameLoop = setInterval(loopCycle,20); //We're going to loopCycle ever 20ms. That should be 50 fps.
+
+	//keystroke listeners
+	$(document).keydown(function(evt) {
+		if (evt.keyCode == 39){
+			paddleMove = 'RIGHT';
+		}
+		else if (evt.keyCode == 37){
+			paddleMove = 'LEFT';
+		}
+	});
+
+	$(document).keyup(function(evt) {
+		if (evt.keyCode == 39 || evt.keyCode == 37) {
+			paddleMove = 'NONE';
+		}
+	})
+
+	//mousemove listener.
+	$('#canvas').mousemove(function(evt){
+		movePaddle(evt.layerX);
+	});
+
+}
+
+function endGame(){
+	clearInterval(gameLoop);
+	context.fillStyle = 'white';
+	context.font = "20pt Courier";
+	context.fillText(endText, canvas.width/2 - endTextWidth/2,canvas.height/2, endTextWidth);
+}
+
+startGame();
 
 drawPaddle();
 drawBall();
