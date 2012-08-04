@@ -200,8 +200,4 @@ function endGame(){
 
 startGame();
 
-drawPaddle();
-drawBall();
-createBricks();
-
 });
