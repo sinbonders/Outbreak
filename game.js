@@ -17,16 +17,34 @@ var paddleHeight = 15;
 var paddleDeltaX = 0;
 var paddleDeltaY = 0;
 var paddleSpeedX = 10;
+var ballSpeedX = 1;
+var ballSpeed = .5;
+var maxBallSpeed = 3;
 
 var ballX = 300;
 var ballY = 300;
 var ballRadius = 10;
+
+var gravity = .1;
 
 var colors = {
 	"1" : "orange", //orange
 	"2" : "rgb(100,200,100)", //green
 	"3" : "rgba(50,100,50,.5)", //clearish/grey
 	"4" : "rgb(90,120,190)" //bluish
+}
+
+var score = 0;
+
+function displayScoreBoard(){
+    //Set the text font and color
+    context.fillStyle = 'rgb(50,100,50)';
+    context.font = "20px Times New Roman";
+    
+    //Clear the bottom 30 pixels of the canvas
+    context.clearRect(0,canvas.height-30,canvas.width,30);  
+    // Write Text 5 pixels from the bottom of the canvas
+    context.fillText('Score: '+score,10,canvas.height-5);
 }
 
 
@@ -40,18 +58,16 @@ function movePaddle(x){
 		paddleX = x - (paddleWidth / 2);
 		return;
 	}
-	if (paddleMove =='LEFT'){
-		paddleDeltaX = -paddleSpeedX;
-	}
-	else if (paddleMove == 'RIGHT'){
-		paddleDeltaX = paddleSpeedX;
-	}
 	else{
 		paddleDeltaX = 0;
 	}
+
+	paddleDeltaX = (paddleX + (paddleWidth / 2) < ballX)? 2 : -2;
+
 	if (paddleX + paddleDeltaX < 0 || paddleX + paddleDeltaX +paddleWidth >canvas.width ){
 		paddleDeltaX = 0;
 	}
+	
 	paddleX = paddleX + paddleDeltaX;
 }
 
@@ -69,11 +85,22 @@ function moveBall(){
 	var ballRightX = ballX + ballDeltaX + ballRadius;
 
 	//check for Paddle hit
-	if (ballBottomY >= paddleY && ballBottomY <= paddleY + (paddleHeight / 2)){ // If the ball is at paddleY but not more than halfway.
+	if (ballBottomY >= paddleY){ // If the ball is at paddleY
 		if (ballX + ballDeltaX >= paddleX && ballX + ballDeltaX <= paddleX +paddleWidth){ // and that shit is within the X of paddleX.
 			ballDeltaY = -ballDeltaY;
 			//to do, change X based on distance of ball from center of paddle.
 		}
+	}
+
+	//Check for collisions:
+
+	if (collisionBricksY()){
+		ballDeltaY = -ballDeltaY; //To-do, slow down, not reverse.
+	}
+
+
+	if (collisionBricksX()){
+		ballDeltaX = -ballDeltaX; //To-do, slow down, not reverse.
 	}
 
 	//Flip directions if we get < 0 on Y. Likewise for X.
@@ -89,8 +116,20 @@ function moveBall(){
 		ballDeltaX = -ballDeltaX;
 	}
 
+	if (ballMoveLR =='LEFT' && ballSpeedX > -maxBallSpeed){
+		ballSpeedX -= ballSpeed;
+		ballDeltaX = ballSpeedX;
+	}
+	else if (ballMoveLR == 'RIGHT' && ballSpeedX < maxBallSpeed){
+		ballSpeedX += ballSpeed;
+		ballDeltaX = ballSpeedX;
+	}
+	console.log(ballSpeedX);
+	var downMomentum = (ballMoveUD == 'DOWN') ? .3 : 0;
+	var upMomentum = (ballMoveUD == 'UP') ? -.1 : 0;
 	ballX = ballX + ballDeltaX;
 	ballY = ballY + ballDeltaY;
+	ballDeltaY = ballDeltaY + gravity + downMomentum + upMomentum;
 }
 
 var bricksPerRow = 16;
@@ -138,6 +177,7 @@ function loopCycle(){
 	movePaddle();
 	drawPaddle();
 	drawBall();
+	displayScoreBoard();
 
 	var fps = 1000 / (thisLoop - lastLoop);
 	basicCounter++
@@ -146,6 +186,11 @@ function loopCycle(){
 		console.log(fps);
 	}
 	lastLoop = thisLoop;
+
+	// window.addEventListener("devicemotion", function(event) { experimental DeviceOrientation fun
+	// 	ballDeltaX = -event.accelerationIncludingGravity.x;
+	// }, true);
+
 
 }
 
@@ -156,23 +201,39 @@ function clearScreen(){
 function startGame(){
 	ballDeltaY = -4;
 	ballDeltaX = -2;
-	paddleMove = 'NONE';
+	ballMoveLR = 'NONE';
+	ballMoveUD = 'NONE';
 	paddleDeltaX = 0;
 	gameLoop = setInterval(loopCycle,20); //We're going to loopCycle ever 20ms. That should be 50 fps.
 
 	//keystroke listeners
 	$(document).keydown(function(evt) {
 		if (evt.keyCode == 39){
-			paddleMove = 'RIGHT';
+			ballMoveLR = 'RIGHT';
 		}
 		else if (evt.keyCode == 37){
-			paddleMove = 'LEFT';
+			ballMoveLR = 'LEFT';
 		}
 	});
 
 	$(document).keyup(function(evt) {
 		if (evt.keyCode == 39 || evt.keyCode == 37) {
-			paddleMove = 'NONE';
+			ballMoveLR = 'NONE';
+		}
+	})
+
+	$(document).keydown(function(evt) {
+		if (evt.keyCode == 38){
+			ballMoveUD = 'UP';
+		}
+	else if (evt.keyCode == 40){
+			ballMoveUD = 'DOWN';
+		}
+	});
+
+	$(document).keyup(function(evt) {
+		if (evt.keyCode == 38 || evt.keyCode == 40) {
+			ballMoveUD = 'NONE';
 		}
 	})
 
@@ -197,6 +258,73 @@ function endGame(){
 	context.font = "20pt Courier";
 	context.fillText(endText, canvas.width/2 - endTextWidth/2,canvas.height/2, endTextWidth);
 }
+
+function collisionBricksX(){
+	var bumpX = false;
+	for (var i=0; i < bricks.length; i++){ //Basic loop through array of array.
+		for (var j=0; j < bricks[i].length; j++){
+			if (bricks[i][j]){ //If brick at location is not 0 / falsey
+				var brickX = j * brickWidth; //The X location is X number of places in.
+				var brickY = i * brickHeight;
+				if  (//touching from left
+					((ballX + ballDeltaX + ballRadius >= brickX) &&
+					(ballX + ballRadius <= brickX))
+					||//touching from right
+					((ballX + ballDeltaX - ballRadius <= brickX + brickWidth)&&
+					(ballX - ballRadius >= brickX + brickWidth))
+					){ //Also at Y of brick.
+					if ((ballY + ballDeltaY - ballRadius <= brickY + brickHeight)&&
+						(ballY + ballDeltaY + ballRadius >= brickY)){
+						explodeBrick(i,j);
+						bumpX = true;
+					}
+				}
+			}
+		}
+	}
+
+	return bumpX;
+}
+
+function collisionBricksY(){
+	var bumpY = false;
+	for (var i=0; i < bricks.length; i++){
+		for (var j=0; j < bricks[i].length; j++){
+			if (bricks[i][j]){
+				var brickX = j * brickWidth;
+				var brickY = i * brickHeight;
+				if ( //touching bottom
+					((ballY + ballDeltaY - ballRadius <= brickY + brickHeight) &&
+					(ballY - ballRadius >= brickY + brickHeight))
+					|| //touch top
+					((ballY + ballDeltaY + ballRadius >= brickY) &&
+					(ballY + ballRadius <= brickY))
+					){ //and also at the X
+					if (ballX + ballDeltaX + ballRadius >= brickX &&
+						ballX + ballDeltaX - ballRadius <= brickX + brickWidth){
+						explodeBrick(i,j);
+						bumpY = true;
+					}
+				}
+			}
+		}
+	}
+	return bumpY;
+}
+
+function explodeBrick(i,j){
+	//Lessen the number of brick
+	bricks[i][j] --;
+
+	if (bricks[i][j]>0){
+		//One point for lessening brick
+		score++;
+	} else {
+		//two for killing
+		score += 2;
+	}
+}
+
 
 startGame();
 
