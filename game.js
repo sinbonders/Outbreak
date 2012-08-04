@@ -181,6 +181,14 @@ function startGame(){
 		movePaddle(evt.pageX - this.offsetLeft);
 	});
 
+	//touchmove listener.
+	$('#canvas').bind('touchmove',function(evt){
+		evt.preventDefault();
+		var touch = evt.originalEvent.touches[0] || evt.originalEvent.changedTouches[0];
+		movePaddle(touch.pageX - this.offsetLeft);
+	});
+
+
 }
 
 function endGame(){
