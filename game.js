@@ -28,7 +28,7 @@ var paddleHeight = 20;
 var paddleDeltaX = 0;
 var paddleDeltaY = 0;
 var paddleSpeedX = 10;
-var ballSpeed = .6;
+var ballSpeed = .4;
 var maxBallSpeedX = 8;
 var criticalVelocity = 15;
 var resistance = .97;
@@ -175,7 +175,7 @@ function moveBall(){
 	}
 
 	if (collisionBricksY() == "unbreakable"){
-		ballDeltaY = -ballDeltaY;
+		ballDeltaY = -ballDeltaY * resistance;
 	}
 
 	if (collisionBricksX() == "breakable"){
@@ -183,7 +183,7 @@ function moveBall(){
 	}
 
 	if (collisionBricksX() == "unbreakable"){
-		ballDeltaX = -ballDeltaX;
+		ballDeltaX = -ballDeltaX * resistance;
 	}
 
 	//Flip directionXs if we get < 0 on Y. Likewise for X.
