@@ -12,7 +12,7 @@ var winText = "You Win!!!"
 var textWidth = 200;
 var levelUpTime = 0;
 var timeBetweenLevels = 1700;
-var balls = 5;
+var balls = 4;
 
 
 var keyRight = 39;
@@ -98,7 +98,7 @@ function displayScore(){
 
     context.fillText('Score: '+score,10,canvas.height-5);
     context.fillText('Level: '+ (level + 1),canvas.width - 100,canvas.height-5);
-    context.fillText('Balls: '+ balls,canvas.width / 2,canvas.height-5);
+    context.fillText('Balls: '+ balls,canvas.width / 2 - 40,canvas.height-5);
 }
 
 function checkScore(){
@@ -178,14 +178,11 @@ function moveBall(){
 	//check for Paddle hit
 	if (ballBottomY >= paddleY){ // If the ball is at paddleY
 		if (ballX + ballDeltaX >= paddleX && ballX + ballDeltaX <= paddleX +paddleWidth){ // and that shit is within the X of paddleX.
+			ballY = paddleY;
 			ballDeltaY = -ballDeltaY;
 			boundSound.play();
 			//to do, change X based on distance of ball from center of paddle.
 		}
-	}
-
-	if ((ballBottomY + ballRadius) >= paddleY && (collisionBricksY() || collisionBricksX())){
-			endGame();
 	}
 
 	//Check for collisions:
@@ -281,6 +278,10 @@ function createBricks(){
 
 //draw dat bricks
 function drawBrick(x,y,type){
+	if ((y * brickHeight) > canvas.height && type < 5){ // A normal brick hits the bottom of the screen, you die.
+		balls = 0;
+		endGame();
+	}
 	if (type){
 		context.fillStyle = colors[type];
 		context.fillRect(x*brickWidth,y*brickHeight,brickWidth,brickHeight);
@@ -322,6 +323,7 @@ function loopCycle(){
 
 	if (levelUpTime > timeBetweenLevels){
 		level++;
+		balls++;
 		levelUpTime = 0;
 		if (level == levels.length) level--;
 	}
@@ -432,6 +434,8 @@ function endGame(win){
 	}
 	var text = win? winText : loseText;
 	clearInterval(gameLoop);
+	$('canvas').click(function(){window.location.reload()});
+	$('canvas').css('cursor','default');
 	context.fillStyle = 'white';
 	context.font = "bold 20pt Georgia";
 	context.fillText(text, canvas.width/2 - textWidth/2,canvas.height/2, textWidth);
