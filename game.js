@@ -126,9 +126,8 @@ if( win.navigator.userAgent.match(/(iPhone|iPod|iPad|Android|BlackBerry)/i) ) { 
 	setTimeout(clickToStart, 200);
 	paddleY = h - 60;
 	}
-	else{
-		myLoader.on('finish', clickToStart);
-	}
+
+clickToStart();
 
 function displayScore(){
     //Set the text font and color
@@ -382,12 +381,12 @@ function clickToStart(){
 	context.fillStyle = 'rgb(235,235,235)';
 	context.font = "bold 32pt monospace";
 	context.fillText("OUTBREAK", canvas.width/2 - textWidth/2,canvas.height/2-100, textWidth);
-	context.font = "bold 20pt monospace";
+	context.font = "bold 15pt monospace";
 	context.fillText("revenge of the ball", canvas.width/2 - textWidth/2,canvas.height/2-70, textWidth);
+	context.font = "bold 20pt monospace";
 	context.fillText("Click to Start", canvas.width/2 - textWidth/2,canvas.height/2, textWidth);
 	context.fillText("use arrow keys", canvas.width/2 - textWidth/2,canvas.height/2 + 30, textWidth);
 	$('canvas').click(startGame);
-	$('canvas').touchstart(startGame);
 }
 function startGame(){
 	$('canvas').unbind('click');
