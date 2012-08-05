@@ -1,55 +1,98 @@
 $(function() {
 var canvas = document.getElementById('canvas');
 var context = canvas.getContext('2d');
+var contextball = canvas.getContext('2d');
 
 var thisLoop, lastLoop;
 var basicCounter = 0;
 
-endText = "GAME OVER!!!"
-endTextWidth = 200;
+var loseText = "GAME OVER!!!"
+var winText = "You Win!!!"
+var textWidth = 200;
+var levelUpTime = 0;
+var timeBetweenLevels = 3200;
+
+
+var keyRight = 39;
+var keyLeft = 37;
+var keyUp = 38;
+var keyDown = 40;
+var spaceBar = 32;
 
 var paddleX = 200;
-var paddleY = 460;
+var paddleY = 600;
 
-var paddleWidth = 100;
-var paddleHeight = 15;
+var paddleWidth = 80;
+var paddleHeight = 20;
 
 var paddleDeltaX = 0;
 var paddleDeltaY = 0;
 var paddleSpeedX = 10;
-var ballSpeedX = 1;
-var ballSpeed = .5;
-var maxBallSpeed = 3;
+var ballSpeed = .6;
+var maxBallSpeedX = 8;
+var criticalVelocity = 15;
+var resistance = .97;
 
 var ballX = 300;
 var ballY = 300;
-var ballRadius = 10;
+var ballRadius = 7;
 
-var gravity = .1;
+var gravity = .12;
+
+var polyphonic = 3;
+
+var hitSound = [];
+for (i = 0; i < polyphonic; i++){
+	hitSound[i] = new Audio("hit.wav");
+}
+var breakSound = [];
+for (i = 0; i < polyphonic; i++){
+	breakSound[i] = new Audio("break.wav");
+}
+
+var boundSound = new Audio("bounce.wav");
+
+var hit_numb = 0;
+var break_numb = 0;
+
+var ballColor = "rgb(168,219,168)";
+var arrowColor = "rgba(121,189,154,.3)";
+var paddleColor = "rgb(121,189,154)";
+
 
 var colors = {
-	"1" : "orange", //orange
-	"2" : "rgb(100,200,100)", //green
-	"3" : "rgba(50,100,50,.5)", //clearish/grey
-	"4" : "rgb(90,120,190)" //bluish
+	"1" : "rgba(59,134,134,.2)", //green
+	"2" : "rgba(59,134,134,.5)", //green
+	"3" : "rgba(59,134,134,.8)", //green
+	"4" : "rgba(59,134,134,1)", //green
+	"5" : "silver"
 }
+
+var level = 0;
+var levels = [800, 600, 500, 300, 200, 100];
 
 var score = 0;
 
-function displayScoreBoard(){
+function displayScore(){
     //Set the text font and color
-    context.fillStyle = 'rgb(50,100,50)';
-    context.font = "20px Times New Roman";
+    context.fillStyle = paddleColor;
+    context.font = "20px Georgia";
     
-    //Clear the bottom 30 pixels of the canvas
     context.clearRect(0,canvas.height-30,canvas.width,30);  
-    // Write Text 5 pixels from the bottom of the canvas
+
+
     context.fillText('Score: '+score,10,canvas.height-5);
+    context.fillText('Level: '+ (level + 1),canvas.width - 100,canvas.height-5);
 }
 
+function checkScore(){
+	if(score >= 50000){
+		endGame(true);
+	}
+}
 
 function drawPaddle(){
-	context.fillStyle = colors['2'];
+	context.fillStyle = paddleColor;
 	context.fillRect(paddleX, paddleY, paddleWidth, paddleHeight);
 }
 
@@ -62,7 +105,8 @@ function movePaddle(x){
 		paddleDeltaX = 0;
 	}
 
-	paddleDeltaX = (paddleX + (paddleWidth / 2) < ballX)? 2 : -2;
+	if (Math.abs((paddleX + (paddleWidth / 2)) - ballX) > (paddleWidth / 3))
+		paddleDeltaX = (paddleX + (paddleWidth / 2) < ballX)? 2 : -2;
 
 	if (paddleX + paddleDeltaX < 0 || paddleX + paddleDeltaX +paddleWidth >canvas.width ){
 		paddleDeltaX = 0;
@@ -72,10 +116,41 @@ function movePaddle(x){
 }
 
 function drawBall(){
+	contextball.beginPath();
+	contextball.arc(ballX,ballY,ballRadius,0,Math.PI*2,true);
+	contextball.fillStyle = ballColor;
+	contextball.fill();
+
+	drawBallArrows();
+
+}
+
+function drawBallArrows(){
+	context.fillStyle   = arrowColor;
 	context.beginPath();
-	context.arc(ballX,ballY,ballRadius,0,Math.PI*2,true);
-	context.fillStyle = colors['4'];
+	var directionX = ballDeltaX > 0 ? ballRadius + 5 : -ballRadius - 5;
+	context.moveTo(ballX + directionX, ballY - ballRadius); // give the (x,y) coordinates
+	context.lineTo(ballX + directionX, ballY + ballRadius);
+	context.lineTo(ballX + directionX + ballDeltaX, ballY);
+	context.lineTo(ballX + directionX, ballY - ballRadius);
 	context.fill();
+	context.closePath();
+
+	context.fillStyle   = arrowColor;
+	context.beginPath();
+	var directionY =  ballDeltaY > 0 ? ballRadius + 5 : -ballRadius - 5;
+	if (ballMoveUD == "DOWN")
+		directionY = ballRadius + 5;
+	else if (ballMoveUD == "UP")
+		directionY = -ballRadius -5;
+
+	context.moveTo(ballX - ballRadius, ballY + directionY ); // give the (x,y) coordinates
+	context.lineTo(ballX, ballY + directionY + (directionY > 0 ? Math.abs(ballDeltaY) : -Math.abs(ballDeltaY)));
+	context.lineTo(ballX + ballRadius, ballY + directionY);
+	context.lineTo(ballX - ballRadius, ballY + directionY);
+	context.fill();
+	context.closePath();
+
 }
 
 function moveBall(){
@@ -88,24 +163,33 @@ function moveBall(){
 	if (ballBottomY >= paddleY){ // If the ball is at paddleY
 		if (ballX + ballDeltaX >= paddleX && ballX + ballDeltaX <= paddleX +paddleWidth){ // and that shit is within the X of paddleX.
 			ballDeltaY = -ballDeltaY;
+			boundSound.play();
 			//to do, change X based on distance of ball from center of paddle.
 		}
 	}
 
 	//Check for collisions:
 
-	if (collisionBricksY()){
-		ballDeltaY = -ballDeltaY; //To-do, slow down, not reverse.
+	if (collisionBricksY() == "breakable"){
+		ballDeltaY = ballDeltaY < 0 ? ballDeltaY + gravity * 20 : ballDeltaY * resistance; //slow down, not reverse.
 	}
 
-
-	if (collisionBricksX()){
-		ballDeltaX = -ballDeltaX; //To-do, slow down, not reverse.
+	if (collisionBricksY() == "unbreakable"){
+		ballDeltaY = -ballDeltaY;
 	}
 
-	//Flip directions if we get < 0 on Y. Likewise for X.
+	if (collisionBricksX() == "breakable"){
+		ballDeltaX = ballDeltaX / 5; //slow down, not reverse.
+	}
+
+	if (collisionBricksX() == "unbreakable"){
+		ballDeltaX = -ballDeltaX;
+	}
+
+	//Flip directionXs if we get < 0 on Y. Likewise for X.
 	if (ballTopY < 0){
 		ballDeltaY = -ballDeltaY;
+		boundSound.play();
 	}
 
 	if (ballBottomY > canvas.height){
@@ -114,39 +198,57 @@ function moveBall(){
 
 	if ((ballLeftX < 0) || (ballRightX > canvas.width)){
 		ballDeltaX = -ballDeltaX;
+		boundSound.play();
+	}
+	else {
+		if (ballMoveLR =='LEFT' && ballDeltaX > -maxBallSpeedX){
+			ballDeltaX -= ballSpeed;
+		}
+		if (ballMoveLR == 'RIGHT' && ballDeltaX < maxBallSpeedX){
+			ballDeltaX += ballSpeed;
+		}
 	}
 
-	if (ballMoveLR =='LEFT' && ballSpeedX > -maxBallSpeed){
-		ballSpeedX -= ballSpeed;
-		ballDeltaX = ballSpeedX;
-	}
-	else if (ballMoveLR == 'RIGHT' && ballSpeedX < maxBallSpeed){
-		ballSpeedX += ballSpeed;
-		ballDeltaX = ballSpeedX;
-	}
-	console.log(ballSpeedX);
-	var downMomentum = (ballMoveUD == 'DOWN') ? .3 : 0;
+	var downMomentum = (ballMoveUD == 'DOWN') ? .2 : 0;
 	var upMomentum = (ballMoveUD == 'UP') ? -.1 : 0;
+	if (ballDeltaY > criticalVelocity) ballDeltaY = criticalVelocity;
 	ballX = ballX + ballDeltaX;
 	ballY = ballY + ballDeltaY;
 	ballDeltaY = ballDeltaY + gravity + downMomentum + upMomentum;
+	ballDeltaX = ballDeltaX > maxBallSpeedX ? maxBallSpeedX : ballDeltaX; 
+	ballDeltaX = ballDeltaX < -maxBallSpeedX ? -maxBallSpeedX : ballDeltaX;
+	ballDeltaX *= resistance;
+	ballDeltaX *= resistance;
 }
 
-var bricksPerRow = 16;
-var brickHeight = 20;
+var bricksPerRow = 12;
+var brickHeight = 16;
 var brickWidth = canvas.width/bricksPerRow;
 
 // 1 is orange, 2 is green, 3, is gray, 0 is empty
 var bricks = [
-	[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
-	[1,1,1,2,1,1,1,1,0,2,1,1,1,0,2,1],
-	[1,1,1,3,1,1,1,1,1,1,1,0,1,1,1,1],
-	[1,1,2,1,1,1,1,0,1,1,1,1,1,1,1,1],
-	[1,1,1,2,1,3,1,1,0,2,3,1,3,0,3,1],
-	[1,1,1,3,1,1,1,1,1,1,1,0,1,1,1,1],
-	[1,1,1,0,1,1,1,1,0,1,1,0,1,3,1,1],
-	[1,2,1,2,1,1,0,1,1,1,1,1,1,3,1,1]
+	[3,3,3,3,3,3,3,3,3,3,3,3],
+	[3,3,3,3,3,3,3,3,3,3,3,3],
+	[3,3,2,3,3,3,3,3,3,2,3,3],
+	[3,3,3,2,2,3,3,2,2,3,3,3],
+	[3,3,3,5,3,2,2,3,5,3,3,3],
+	[3,3,3,3,3,3,3,3,3,3,3,3],
+	[3,3,3,3,2,3,3,2,3,3,3,3],
+	[3,3,3,3,3,2,2,3,3,3,3,3],
+	[3,3,3,3,1,1,1,1,3,3,3,3],
+	[3,3,3,1,1,1,1,1,1,3,3,3],
+	[3,2,1,1,1,1,1,1,1,1,2,3]
 ]
+
+// var totalBrickScore = 0;
+// for (var i=0; i < bricks.length; i++){
+// 		for (var j=0; j < bricks[i].length; j++){
+// 			if (bricks[i][j] < 5){
+// 				totalBrickScore+= bricks[i][j];
+// 			}
+// 	}
+// }
+// console.log(totalBrickScore);
 
 function createBricks(){
 	for (var i=0; i < bricks.length; i++){
@@ -168,22 +270,46 @@ function drawBrick(x,y,type){
 	}
 }
 
+function addBricks(){
+var newRow = [];
+	for (i = 0; i < bricksPerRow; i++){
+		var newBrick = 0;
+		var random = Math.random()* 100;
+		if (random > 95) newBrick = 5;
+		if (random > 80 && random <95) newBrick = 4;
+		if (random > 60 && random <80) newBrick = 3;
+		if (random > 40 && random <60) newBrick = 2;
+		if (random > 10 && random <40) newBrick = 1;
+		newRow.push(newBrick);
+	}
+	bricks.unshift(newRow);
+}
+
 function loopCycle(){
 	thisLoop = new Date;
 	//This is going to run at 50fps and redraw everything after clearing.
 	clearScreen();
-	createBricks();
 	moveBall();
+	createBricks();
+	drawBall();
 	movePaddle();
 	drawPaddle();
-	drawBall();
-	displayScoreBoard();
+	displayScore();
+	checkScore();
+
+	levelUpTime++;
+
+	if (levelUpTime > timeBetweenLevels){
+		level++;
+		levelUpTime = 0;
+		if (level == levels.length) level--;
+	}
 
 	var fps = 1000 / (thisLoop - lastLoop);
 	basicCounter++
-	if (basicCounter > 100){
+	if (basicCounter > levels[level]){
 		basicCounter = 0;
-		console.log(fps);
+		addBricks();
 	}
 	lastLoop = thisLoop;
 
@@ -208,55 +334,58 @@ function startGame(){
 
 	//keystroke listeners
 	$(document).keydown(function(evt) {
-		if (evt.keyCode == 39){
+		if (evt.keyCode == keyRight){
 			ballMoveLR = 'RIGHT';
 		}
-		else if (evt.keyCode == 37){
+		else if (evt.keyCode == keyLeft){
 			ballMoveLR = 'LEFT';
 		}
-	});
-
-	$(document).keyup(function(evt) {
-		if (evt.keyCode == 39 || evt.keyCode == 37) {
-			ballMoveLR = 'NONE';
-		}
-	})
-
-	$(document).keydown(function(evt) {
-		if (evt.keyCode == 38){
+		if (evt.keyCode == keyUp){
 			ballMoveUD = 'UP';
 		}
-	else if (evt.keyCode == 40){
+		else if (evt.keyCode == keyDown){
 			ballMoveUD = 'DOWN';
+		}
+		if (evt.keyCode == spaceBar){
+			criticalVelocity = 40;
 		}
 	});
 
+
 	$(document).keyup(function(evt) {
-		if (evt.keyCode == 38 || evt.keyCode == 40) {
+		if (evt.keyCode == keyLeft && ballMoveLR == 'LEFT' || evt.keyCode == keyRight && ballMoveLR == 'RIGHT') {
+			ballMoveLR = 'NONE';
+		}
+		if (evt.keyCode == keyUp || evt.keyCode == keyDown){
 			ballMoveUD = 'NONE';
+		}
+		if (evt.keyCode == spaceBar){
+			criticalVelocity = 15;
 		}
 	})
 
-	//mousemove listener.
-	$('#canvas').mousemove(function(evt){
-		movePaddle(evt.pageX - this.offsetLeft);
-	});
 
-	//touchmove listener.
-	$('#canvas').bind('touchmove',function(evt){
-		evt.preventDefault();
-		var touch = evt.originalEvent.touches[0] || evt.originalEvent.changedTouches[0];
-		movePaddle(touch.pageX - this.offsetLeft);
-	});
+	// //mousemove listener.
+	// $('#canvas').mousemove(function(evt){
+	// 	movePaddle(evt.pageX - this.offsetLeft);
+	// });
+
+	// //touchmove listener.
+	// $('#canvas').bind('touchmove',function(evt){
+	// 	evt.preventDefault();
+	// 	var touch = evt.originalEvent.touches[0] || evt.originalEvent.changedTouches[0];
+	// 	movePaddle(touch.pageX - this.offsetLeft);
+	// });
 
 
 }
 
-function endGame(){
+function endGame(win){
+	var text = win? winText : loseText;
 	clearInterval(gameLoop);
 	context.fillStyle = 'white';
-	context.font = "20pt Courier";
-	context.fillText(endText, canvas.width/2 - endTextWidth/2,canvas.height/2, endTextWidth);
+	context.font = "bold 20pt Georgia";
+	context.fillText(text, canvas.width/2 - textWidth/2,canvas.height/2, textWidth);
 }
 
 function collisionBricksX(){
@@ -275,8 +404,13 @@ function collisionBricksX(){
 					){ //Also at Y of brick.
 					if ((ballY + ballDeltaY - ballRadius <= brickY + brickHeight)&&
 						(ballY + ballDeltaY + ballRadius >= brickY)){
-						explodeBrick(i,j);
-						bumpX = true;
+						if (bricks[i][j] < 5){
+							explodeBrick(i,j);
+							bumpX = "breakable";
+						}
+						else{
+							bumpX = "unbreakable";
+						}
 					}
 				}
 			}
@@ -299,11 +433,19 @@ function collisionBricksY(){
 					|| //touch top
 					((ballY + ballDeltaY + ballRadius >= brickY) &&
 					(ballY + ballRadius <= brickY))
+					||
+					((ballY + ballDeltaY - ballRadius >= brickY) &&
+					(ballY + ballRadius <= brickY))
 					){ //and also at the X
 					if (ballX + ballDeltaX + ballRadius >= brickX &&
 						ballX + ballDeltaX - ballRadius <= brickX + brickWidth){
-						explodeBrick(i,j);
-						bumpY = true;
+						if (bricks[i][j] < 5){
+							explodeBrick(i,j);
+							bumpY = "breakable";
+						}
+						else{
+							bumpY = "unbreakable";
+						}
 					}
 				}
 			}
@@ -313,16 +455,24 @@ function collisionBricksY(){
 }
 
 function explodeBrick(i,j){
-	//Lessen the number of brick
-	bricks[i][j] --;
-
-	if (bricks[i][j]>0){
-		//One point for lessening brick
+	//One point for hitting brick
+	if (bricks[i][j]>0)
 		score++;
-	} else {
-		//two for killing
-		score += 2;
+	//Lessen the power of brick
+	if (bricks[i][j] < 5)
+		bricks[i][j] --;
+
+	if (bricks[i][j] == 0){
+		breakSound[break_numb].play();
+		break_numb++
+		if (break_numb >= breakSound.length) break_numb = 0;
 	}
+	else{
+		hitSound[hit_numb].play();
+		hit_numb++
+		if (hit_numb >= hitSound.length) hit_numb = 0;
+	}
+
 }
 
 
