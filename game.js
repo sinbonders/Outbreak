@@ -71,8 +71,6 @@ for (i = 1; i < 17; i++){
 	song[i].volume=.2;
 }
 
-myLoader.on('finish', clickToStart);
-
 var note = 1;
 
 var hit_numb = 0;
@@ -114,6 +112,23 @@ var bricks = [
 ]
 
 var score = 0;
+
+var mobile = 0;
+var win = window,
+	doc = document,
+	w = win.innerWidth,
+	h = win.innerHeight;
+
+if( win.navigator.userAgent.match(/(iPhone|iPod|iPad|Android|BlackBerry)/i) ) { //experimental mobile mode.
+	mobile = 1;
+	canvas.height = h;
+	canvas.width  = w;
+	setTimeout(clickToStart, 200);
+	paddleY = h - 60;
+	}
+	else{
+		myLoader.on('finish', clickToStart);
+	}
 
 function displayScore(){
     //Set the text font and color
@@ -256,8 +271,8 @@ function moveBall(){
 		}
 	}
 
-	var downMomentum = (ballMoveUD == 'DOWN') ? .2 : 0;
-	var upMomentum = (ballMoveUD == 'UP') ? -.1 : 0;
+	var downMomentum = (ballMoveUD == 'DOWN') ? .25 : 0;
+	var upMomentum = (ballMoveUD == 'UP') ? -.15 : 0;
 	if (ballDeltaY > criticalVelocity) ballDeltaY = criticalVelocity;
 	ballX = ballX + ballDeltaX;
 	ballY = ballY + ballDeltaY;
@@ -365,10 +380,14 @@ function clickToStart(){
 		return;
 	}
 	context.fillStyle = 'rgb(235,235,235)';
+	context.font = "bold 32pt monospace";
+	context.fillText("OUTBREAK", canvas.width/2 - textWidth/2,canvas.height/2-100, textWidth);
 	context.font = "bold 20pt monospace";
+	context.fillText("revenge of the ball", canvas.width/2 - textWidth/2,canvas.height/2-70, textWidth);
 	context.fillText("Click to Start", canvas.width/2 - textWidth/2,canvas.height/2, textWidth);
-	context.fillText("use arrow keys", canvas.width/2 - textWidth/2,canvas.height/2 + 50, textWidth);
+	context.fillText("use arrow keys", canvas.width/2 - textWidth/2,canvas.height/2 + 30, textWidth);
 	$('canvas').click(startGame);
+	$('canvas').touchstart(startGame);
 }
 function startGame(){
 	$('canvas').unbind('click');
@@ -421,24 +440,31 @@ function startGame(){
 	// });
 
 
-	//touchstart listener.
-	$('#canvas').bind('touchstart',function(evt){
-		evt.preventDefault();
-		var touch = evt.originalEvent.touches[0] || evt.originalEvent.changedTouches[0];
-		if (touch.pageX < ballX){
-			ballMoveLR = 'LEFT';
-		}
-		else if (touch.pageX > ballX){
-			ballMoveLR = 'RIGHT';
-		}
-		if (touch.pageY < ballY){
-			ballMoveUD = 'UP';
-		}
-		else if (touch.pageY > ballX){
-			ballMoveUD = 'DOWN';
-		}
-	});
+	//touch listener.
+	if (mobile){
+		$('#canvas').bind('touchstart',function(evt){
+			evt.preventDefault();
+			var touch = evt.originalEvent.touches[0] || evt.originalEvent.changedTouches[0];
+			if (touch.pageX - this.offsetLeft < 100){
+				ballMoveLR = 'LEFT';
+			}
+			else if (touch.pageX - this.offsetLeft > canvas.width - 100){
+				ballMoveLR = 'RIGHT';
+			}
+			if (touch.pageY - this.offsetTop < canvas.height / 2){
+				ballMoveUD = 'UP';
+			}
+			else if (touch.pageY - this.offsetTop > canvas.height / 2){
+				ballMoveUD = 'DOWN';
+			}
+		});
 
+		$('#canvas').bind('touchend',function(evt){
+			//evt.preventDefault();
+			ballMoveLR = 'NONE';
+			ballMoveUD = 'NONE';
+		});
+	}
 
 	// //touchmove listener.
 	// $('#canvas').bind('touchmove',function(evt){
@@ -562,4 +588,5 @@ function explodeBrick(i,j){
 	}
 
 }
+
 }
