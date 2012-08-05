@@ -1,7 +1,11 @@
-$(function() {
+var highScore = 0;
+var restart = 0;
+$(runGame);
+function runGame(){
 var canvas = document.getElementById('canvas');
 var context = canvas.getContext('2d');
 var contextball = canvas.getContext('2d');
+clearScreen();
 
 var thisLoop, lastLoop;
 var basicCounter = 0;
@@ -52,10 +56,14 @@ for (i = 0; i < polyphonic; i++){
 var breakSound = [];
 for (i = 0; i < polyphonic; i++){
 	breakSound[i] = new Audio("break.wav");
+	breakSound[i].volume=.6;
 }
 
-var boundSound = new Audio("bounce.wav");
-myLoader.addFiles('hit.wav', 'break.wav', 'bounce.wav'); 
+var bounceSound = new Audio("bounce.wav");
+var newBricks = new Audio("newbricks.wav");
+newBricks.volume = .6;
+
+myLoader.addFiles('hit.wav', 'break.wav', 'bounce.wav','newbricks.wav'); 
 var song = [];
 for (i = 1; i < 17; i++){
 	song[i] = new Audio("song/note"+i+".wav");
@@ -86,19 +94,38 @@ var colors = {
 var level = 0;
 var levels = [500, 400, 300, 200, 100, 75, 60, 40, 30, 20];
 
+
+var bricksPerRow = 12;
+var brickHeight = 16;
+var brickWidth = canvas.width/bricksPerRow;
+
+var bricks = [
+	[3,3,3,3,3,3,3,3,3,3,3,3],
+	[3,3,3,3,3,3,3,3,3,3,3,3],
+	[3,3,2,3,3,3,3,3,3,2,3,3],
+	[3,3,3,2,2,3,3,2,2,3,3,3],
+	[3,3,3,5,3,2,2,3,5,3,3,3],
+	[3,3,3,3,3,3,3,3,3,3,3,3],
+	[3,3,3,3,2,3,3,2,3,3,3,3],
+	[3,3,3,3,3,2,2,3,3,3,3,3],
+	[3,3,3,3,1,1,1,1,3,3,3,3],
+	[3,3,3,1,1,1,1,1,1,3,3,3],
+	[3,2,1,1,1,1,1,1,1,1,2,3]
+]
+
 var score = 0;
 
 function displayScore(){
     //Set the text font and color
     context.fillStyle = paddleColor;
-    context.font = "20px Georgia";
+    context.font = "20px monospace";
     
     context.clearRect(0,canvas.height-30,canvas.width,30);  
 
 
-    context.fillText('Score: '+score,10,canvas.height-5);
-    context.fillText('Level: '+ (level + 1),canvas.width - 100,canvas.height-5);
-    context.fillText('Balls: '+ balls,canvas.width / 2 - 40,canvas.height-5);
+    context.fillText('SCORE:'+score,10,canvas.height-5);
+    context.fillText('LEVEL:'+ (level + 1),canvas.width - 100,canvas.height-5);
+    context.fillText('BALLS:'+ balls,canvas.width / 2 - 20,canvas.height-5);
 }
 
 function checkScore(){
@@ -180,7 +207,7 @@ function moveBall(){
 		if (ballX + ballDeltaX >= paddleX && ballX + ballDeltaX <= paddleX +paddleWidth){ // and that shit is within the X of paddleX.
 			ballY = paddleY;
 			ballDeltaY = -ballDeltaY;
-			boundSound.play();
+			bounceSound.play();
 			//to do, change X based on distance of ball from center of paddle.
 		}
 	}
@@ -194,6 +221,7 @@ function moveBall(){
 
 	if (collisionBricksY() == "unbreakable"){
 		ballDeltaY = -ballDeltaY * resistance;
+		bounceSound.play();
 	}
 
 	if (collisionBricksX() == "breakable"){
@@ -202,12 +230,13 @@ function moveBall(){
 
 	if (collisionBricksX() == "unbreakable"){
 		ballDeltaX = -ballDeltaX * resistance;
+		bounceSound.play();
 	}
 
 	//Flip directionXs if we get < 0 on Y. Likewise for X.
 	if (ballTopY < 0){
 		ballDeltaY = -ballDeltaY;
-		boundSound.play();
+		bounceSound.play();
 	}
 
 	if (ballBottomY > canvas.height){
@@ -216,7 +245,7 @@ function moveBall(){
 
 	if ((ballLeftX < 0) || (ballRightX > canvas.width)){
 		ballDeltaX = -ballDeltaX;
-		boundSound.play();
+		bounceSound.play();
 	}
 	else {
 		if (ballMoveLR =='LEFT' && ballDeltaX > -maxBallSpeedX){
@@ -239,34 +268,6 @@ function moveBall(){
 	ballDeltaX *= resistance;
 }
 
-var bricksPerRow = 12;
-var brickHeight = 16;
-var brickWidth = canvas.width/bricksPerRow;
-
-// 1 is orange, 2 is green, 3, is gray, 0 is empty
-var bricks = [
-	[3,3,3,3,3,3,3,3,3,3,3,3],
-	[3,3,3,3,3,3,3,3,3,3,3,3],
-	[3,3,2,3,3,3,3,3,3,2,3,3],
-	[3,3,3,2,2,3,3,2,2,3,3,3],
-	[3,3,3,5,3,2,2,3,5,3,3,3],
-	[3,3,3,3,3,3,3,3,3,3,3,3],
-	[3,3,3,3,2,3,3,2,3,3,3,3],
-	[3,3,3,3,3,2,2,3,3,3,3,3],
-	[3,3,3,3,1,1,1,1,3,3,3,3],
-	[3,3,3,1,1,1,1,1,1,3,3,3],
-	[3,2,1,1,1,1,1,1,1,1,2,3]
-]
-
-// var totalBrickScore = 0;
-// for (var i=0; i < bricks.length; i++){
-// 		for (var j=0; j < bricks[i].length; j++){
-// 			if (bricks[i][j] < 5){
-// 				totalBrickScore+= bricks[i][j];
-// 			}
-// 	}
-// }
-// console.log(totalBrickScore);
 
 function createBricks(){
 	for (var i=0; i < bricks.length; i++){
@@ -293,6 +294,7 @@ function drawBrick(x,y,type){
 }
 
 function addBricks(){
+newBricks.play();
 var newRow = [];
 	for (i = 0; i < bricksPerRow; i++){
 		var newBrick = 0;
@@ -330,7 +332,7 @@ function loopCycle(){
 
 	var fps = 1000 / (thisLoop - lastLoop);
 	basicCounter++
-	if (basicCounter > levels[level]){
+	if (basicCounter > levels[level]){ //Level means less time between bricks.
 		basicCounter = 0;
 		addBricks();
 	}
@@ -341,7 +343,7 @@ function loopCycle(){
 
 	lastLoop = thisLoop;
 
-	// window.addEventListener("devicemotion", function(event) { experimental DeviceOrientation fun
+	// window.addEventListener("devicemotion", function(event) { //experimental DeviceOrientation fun
 	// 	ballDeltaX = -event.accelerationIncludingGravity.x;
 	// }, true);
 
@@ -358,9 +360,14 @@ function stepMusic(){
 	note++;
 }
 function clickToStart(){
-	context.fillStyle = 'white';
-	context.font = "bold 20pt Georgia";
+	if (restart){
+		startGame();
+		return;
+	}
+	context.fillStyle = 'rgb(235,235,235)';
+	context.font = "bold 20pt monospace";
 	context.fillText("Click to Start", canvas.width/2 - textWidth/2,canvas.height/2, textWidth);
+	context.fillText("use arrow keys", canvas.width/2 - textWidth/2,canvas.height/2 + 50, textWidth);
 	$('canvas').click(startGame);
 }
 function startGame(){
@@ -413,6 +420,26 @@ function startGame(){
 	// 	movePaddle(evt.pageX - this.offsetLeft);
 	// });
 
+
+	//touchstart listener.
+	$('#canvas').bind('touchstart',function(evt){
+		evt.preventDefault();
+		var touch = evt.originalEvent.touches[0] || evt.originalEvent.changedTouches[0];
+		if (touch.pageX < ballX){
+			ballMoveLR = 'LEFT';
+		}
+		else if (touch.pageX > ballX){
+			ballMoveLR = 'RIGHT';
+		}
+		if (touch.pageY < ballY){
+			ballMoveUD = 'UP';
+		}
+		else if (touch.pageY > ballX){
+			ballMoveUD = 'DOWN';
+		}
+	});
+
+
 	// //touchmove listener.
 	// $('#canvas').bind('touchmove',function(evt){
 	// 	evt.preventDefault();
@@ -432,13 +459,21 @@ function endGame(win){
 		ballDeltaY = 0;
 		return;
 	}
+	var newHighScore = "";
+	if (score > highScore){
+		highScore = score;
+		newHighScore = "New "
+	}
 	var text = win? winText : loseText;
 	clearInterval(gameLoop);
-	$('canvas').click(function(){window.location.reload()});
+	$('canvas').click(runGame);
 	$('canvas').css('cursor','default');
-	context.fillStyle = 'white';
-	context.font = "bold 20pt Georgia";
+	restart = 1;
+	context.fillStyle = 'rgb(235,235,235)';
+	context.font = "bold 20pt monospace";
 	context.fillText(text, canvas.width/2 - textWidth/2,canvas.height/2, textWidth);
+	context.fillText(newHighScore + "High Score: " + highScore, canvas.width/2 - textWidth/2,canvas.height/2 + 50, textWidth);
+	context.fillText("click to restart", canvas.width/2 - textWidth/2,canvas.height/2 + 100, textWidth);
 }
 
 function collisionBricksX(){
@@ -527,5 +562,4 @@ function explodeBrick(i,j){
 	}
 
 }
-
-});
+}
