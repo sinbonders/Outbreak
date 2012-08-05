@@ -2,8 +2,10 @@
 <html>
 	<head>
 		<meta http-equiv="Content-type" content="text/html; charset=utf-8">
-		<title>My first HTML5 game.</title>
+		<title>Outbreak: Revenge of the Ball</title>
+		<script src="html5-preloader.js"></script>
 		<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
+		
 		<script src="game.js"></script>
 	</head>
 	<body>
@@ -19,15 +21,16 @@
 				border:1px solid black;
 				background: #353535;
 				display: block;
-				margin: 20px auto 10px;
-				cursor: none;
+				margin: 10px auto 10px;
 			}
 			p {
 				margin: auto;
 			}
+			h2 {
+				font-size: 12pt;
+			}
 		</style>
-		<h2>Outbreak: Revenge of the Ball</h2>
-		<canvas id="canvas" width="480" height="640"> 
+		<canvas id="canvas" width="360" height="540"> 
 		Your browser does not support the HTML5 Canvas.         
 		</canvas>
 		<p>Use arrow keys to control the ball. Up and down can increase speed.</p>

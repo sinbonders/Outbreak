@@ -5,12 +5,14 @@ var contextball = canvas.getContext('2d');
 
 var thisLoop, lastLoop;
 var basicCounter = 0;
+var musicTimer = 0;
 
 var loseText = "GAME OVER!!!"
 var winText = "You Win!!!"
 var textWidth = 200;
 var levelUpTime = 0;
-var timeBetweenLevels = 3200;
+var timeBetweenLevels = 1700;
+var balls = 5;
 
 
 var keyRight = 39;
@@ -20,7 +22,7 @@ var keyDown = 40;
 var spaceBar = 32;
 
 var paddleX = 200;
-var paddleY = 600;
+var paddleY = 500;
 
 var paddleWidth = 80;
 var paddleHeight = 20;
@@ -35,13 +37,15 @@ var resistance = .97;
 
 var ballX = 300;
 var ballY = 300;
-var ballRadius = 7;
+var ballRadius = 6;
 
 var gravity = .12;
 
 var polyphonic = 3;
 
 var hitSound = [];
+var myLoader = html5Preloader();
+
 for (i = 0; i < polyphonic; i++){
 	hitSound[i] = new Audio("hit.wav");
 }
@@ -51,6 +55,17 @@ for (i = 0; i < polyphonic; i++){
 }
 
 var boundSound = new Audio("bounce.wav");
+myLoader.addFiles('hit.wav', 'break.wav', 'bounce.wav'); 
+var song = [];
+for (i = 1; i < 17; i++){
+	song[i] = new Audio("song/note"+i+".wav");
+	myLoader.addFiles('song/note'+i+'.wav');
+	song[i].volume=.2;
+}
+
+myLoader.on('finish', clickToStart);
+
+var note = 1;
 
 var hit_numb = 0;
 var break_numb = 0;
@@ -69,7 +84,7 @@ var colors = {
 }
 
 var level = 0;
-var levels = [800, 600, 500, 300, 200, 100];
+var levels = [500, 400, 300, 200, 100, 50, 40, 30, 20, 10];
 
 var score = 0;
 
@@ -83,6 +98,7 @@ function displayScore(){
 
     context.fillText('Score: '+score,10,canvas.height-5);
     context.fillText('Level: '+ (level + 1),canvas.width - 100,canvas.height-5);
+    context.fillText('Balls: '+ balls,canvas.width / 2,canvas.height-5);
 }
 
 function checkScore(){
@@ -168,10 +184,15 @@ function moveBall(){
 		}
 	}
 
+	if ((ballBottomY + ballRadius) >= paddleY && (collisionBricksY() || collisionBricksX())){
+			endGame();
+	}
+
 	//Check for collisions:
 
 	if (collisionBricksY() == "breakable"){
 		ballDeltaY = ballDeltaY < 0 ? ballDeltaY + gravity * 20 : ballDeltaY * resistance; //slow down, not reverse.
+
 	}
 
 	if (collisionBricksY() == "unbreakable"){
@@ -275,11 +296,11 @@ var newRow = [];
 	for (i = 0; i < bricksPerRow; i++){
 		var newBrick = 0;
 		var random = Math.random()* 100;
-		if (random > 95) newBrick = 5;
-		if (random > 80 && random <95) newBrick = 4;
-		if (random > 60 && random <80) newBrick = 3;
-		if (random > 40 && random <60) newBrick = 2;
-		if (random > 10 && random <40) newBrick = 1;
+		if (random > 96) newBrick = 5;
+		if (random > 85 && random <97) newBrick = 4;
+		if (random > 70 && random <86) newBrick = 3;
+		if (random > 40 && random <71) newBrick = 2;
+		if (random > 10 && random <41) newBrick = 1;
 		newRow.push(newBrick);
 	}
 	bricks.unshift(newRow);
@@ -289,13 +310,13 @@ function loopCycle(){
 	thisLoop = new Date;
 	//This is going to run at 50fps and redraw everything after clearing.
 	clearScreen();
-	moveBall();
 	createBricks();
 	drawBall();
 	movePaddle();
 	drawPaddle();
 	displayScore();
 	checkScore();
+	moveBall(); // moveBall can result in endGame
 
 	levelUpTime++;
 
@@ -311,6 +332,11 @@ function loopCycle(){
 		basicCounter = 0;
 		addBricks();
 	}
+	if (musicTimer > levels[level] / 12){
+		stepMusic();
+		musicTimer = 0;
+	} else musicTimer++;
+
 	lastLoop = thisLoop;
 
 	// window.addEventListener("devicemotion", function(event) { experimental DeviceOrientation fun
@@ -324,7 +350,21 @@ function clearScreen(){
 	context.clearRect(0,0,canvas.width,canvas.height);
 }
 
+function stepMusic(){
+	if (note > 16) note = 1;
+	song[note].play();
+	note++;
+}
+function clickToStart(){
+	context.fillStyle = 'white';
+	context.font = "bold 20pt Georgia";
+	context.fillText("Click to Start", canvas.width/2 - textWidth/2,canvas.height/2, textWidth);
+	$('canvas').click(startGame);
+}
 function startGame(){
+	$('canvas').unbind('click');
+	$('canvas').css('cursor','none');
+	clearScreen();
 	ballDeltaY = -4;
 	ballDeltaX = -2;
 	ballMoveLR = 'NONE';
@@ -334,6 +374,7 @@ function startGame(){
 
 	//keystroke listeners
 	$(document).keydown(function(evt) {
+		evt.preventDefault();
 		if (evt.keyCode == keyRight){
 			ballMoveLR = 'RIGHT';
 		}
@@ -381,6 +422,14 @@ function startGame(){
 }
 
 function endGame(win){
+	if (balls > 0){
+		balls--;
+		ballX = canvas.width / 2;
+		ballY = canvas.height - 300;
+		ballDeltaX = 0;
+		ballDeltaY = 0;
+		return;
+	}
 	var text = win? winText : loseText;
 	clearInterval(gameLoop);
 	context.fillStyle = 'white';
@@ -474,8 +523,5 @@ function explodeBrick(i,j){
 	}
 
 }
-
-
-startGame();
 
 });
