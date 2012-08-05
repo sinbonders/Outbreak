@@ -1,3 +1,8 @@
+/*
+Outbreak: Revenge of the Ball
+Copyright 2012 sinbonders
+*/
+
 var highScore = 0;
 var restart = 0;
 $(runGame);
