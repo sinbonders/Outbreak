@@ -326,6 +326,8 @@ var newRow = [];
 		newRow.push(newBrick);
 	}
 	bricks.unshift(newRow);
+	if (bricks.length > 50)
+		bricks.pop();
 }
 
 function loopCycle(){
