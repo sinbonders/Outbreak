@@ -70,10 +70,10 @@ newBricks.volume = .6;
 
 myLoader.addFiles('hit.wav', 'break.wav', 'bounce.wav','newbricks.wav'); 
 var song = [];
-for (i = 1; i < 17; i++){
+for (i = 1; i < 9; i++){
 	song[i] = new Audio("song/note"+i+".wav");
 	myLoader.addFiles('song/note'+i+'.wav');
-	song[i].volume=.2;
+	song[i].volume=.4;
 }
 
 var note = 1;
@@ -374,7 +374,7 @@ function clearScreen(){
 }
 
 function stepMusic(){
-	if (note > 16) note = 1;
+	if (note > 8) note = 1;
 	song[note].play();
 	note++;
 }
