@@ -6,16 +6,17 @@
 		<title>Outbreak: Revenge of the Ball</title>
 		<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
 		<script src="html5-preloader.js"></script>
-		<script src="game-min.js"></script>
+		<link href='http://fonts.googleapis.com/css?family=Press+Start+2P' rel='stylesheet' type='text/css'>
 	</head>
 	<body>
 		<style type="text/css">
 			body{
 				background: #232323;
 				font-family: Georgia;
-				font-size: 10pt;
+				font-size: 8pt;
 				text-align: center;
 				color: #CCC;
+				font-family: 'Press Start 2P', cursive;
 			}
 			canvas {
 				border:1px solid black;
@@ -33,9 +34,12 @@
 		<canvas id="canvas" width="360" height="540"> 
 		Your browser does not support the HTML5 Canvas.         
 		</canvas>
-		<p>Use arrow keys to control the ball. Press Down (and Up) to increase bounce momentum.</p>
-		<p>Don't move too fast or the paddle will miss you!</p>
-		<p>Don't let the bricks hit the bottom!</p>
+		<p>Use arrow keys to control the <span style="color: #ABDBA2"><span style="font-family: monospace">●</span> ball</span>.</p>
+		<p>Press ↓ (and ↑) to increase bounce momentum.</p>
+		<p>Don't move too fast or the <span style="color: #79BD9A">paddle ▬</span> will miss you!</p>
+		<p>Don't let the <span style="color: #479090">bricks ■</span> hit the bottom!</p>
+		
+		<script src="game-min.js"></script>
 		<script type="text/javascript">
 
 		  var _gaq = _gaq || [];

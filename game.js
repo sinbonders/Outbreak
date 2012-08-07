@@ -5,7 +5,7 @@ Copyright 2012 sinbonders
 
 var highScore = 0;
 var restart = 0;
-$(runGame);
+$(window).load(runGame);
 function runGame(){
 var canvas = document.getElementById('canvas');
 var context = canvas.getContext('2d');
@@ -16,8 +16,8 @@ var thisLoop, lastLoop;
 var basicCounter = 0;
 var musicTimer = 0;
 
-var loseText = "GAME OVER!!!"
-var winText = "You Win!!!"
+var loseText = "GAME OVER"
+var winText = "YOU WIN"
 var textWidth = 200;
 var levelUpTime = 0;
 var timeBetweenLevels = 1700;
@@ -137,7 +137,7 @@ clickToStart();
 function displayScore(){
     //Set the text font and color
     context.fillStyle = paddleColor;
-    context.font = "20px monospace";
+    context.font = "12px 'Press Start 2P'";
     
     context.clearRect(0,canvas.height-30,canvas.width,30);  
 
@@ -386,9 +386,9 @@ function clickToStart(){
 		return;
 	}
 	context.fillStyle = 'rgb(235,235,235)';
-	context.font = "bold 32pt monospace";
+	context.font = "bold 28pt 'Press Start 2P'";
 	context.fillText("OUTBREAK", canvas.width/2 - textWidth/2,canvas.height/2-100, textWidth);
-	context.font = "bold 20pt monospace";
+	context.font = "bold 18pt 'Press Start 2P'";
 	context.fillText("Click to Start", canvas.width/2 - textWidth/2,canvas.height/2, textWidth);
 	context.fillText("use arrow keys", canvas.width/2 - textWidth/2,canvas.height/2 + 30, textWidth);
 	$('canvas').click(startGame);
@@ -500,8 +500,9 @@ function endGame(win){
 	$('canvas').css('cursor','default');
 	restart = 1;
 	context.fillStyle = 'rgb(235,235,235)';
-	context.font = "bold 20pt monospace";
+	context.font = "bold 22px 'Press Start 2P'";
 	context.fillText(text, canvas.width/2 - textWidth/2,canvas.height/2, textWidth);
+	context.font = "bold 10pt 'Press Start 2P'";
 	context.fillText(newHighScore + "High Score: " + highScore, canvas.width/2 - textWidth/2,canvas.height/2 + 50, textWidth);
 	context.fillText("click to restart", canvas.width/2 - textWidth/2,canvas.height/2 + 100, textWidth);
 }
