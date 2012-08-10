@@ -225,7 +225,7 @@ function moveBall(){
 	if (ballBottomY >= paddleY){ // If the ball is at paddleY
 		if (ballX + ballDeltaX >= paddleX && ballX + ballDeltaX <= paddleX +paddleWidth){ // and that shit is within the X of paddleX.
 			ballY = paddleY;
-			ballDeltaY = -ballDeltaY;
+			ballDeltaY = -Math.abs(ballDeltaY); //always back up
 			bounceSound.play();
 			//to do, change X based on distance of ball from center of paddle.
 		}
@@ -300,8 +300,11 @@ function createBricks(){
 function drawBrick(x,y,type){
 	if (type){
 		if ((y * brickHeight) > canvas.height && type < 5){ // A normal brick hits the bottom of the screen, you die.
-			balls = 0;
-			endGame();
+			if (balls <= 0){
+				balls = "X";
+				endGame();
+			}
+			else balls--;
 		}
 		context.fillStyle = colors[type];
 		context.fillRect(x*brickWidth,y*brickHeight,brickWidth,brickHeight);
