@@ -488,7 +488,7 @@ function startGame(){
 }
 
 function endGame(win){
-	if (balls > 0){
+	if (balls > 0 && balls != "X"){
 		balls--;
 		ballX = canvas.width / 2;
 		ballY = canvas.height - 300;
