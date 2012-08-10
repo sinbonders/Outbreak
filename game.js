@@ -301,13 +301,12 @@ function drawBrick(x,y,type){
 	if (type){
 		if ((y * brickHeight) > canvas.height && type < 5){ // A normal brick hits the bottom of the screen, you die.
 			bricks[y][x] = 0;
+			balls--
 			if (balls <= 0){
 				balls = "X";
 				endGame();
 			}
-			else {
-				balls--;
-			}
+			newBricks.play();
 		}
 		context.fillStyle = colors[type];
 		context.fillRect(x*brickWidth,y*brickHeight,brickWidth,brickHeight);
