@@ -95,7 +95,7 @@ var colors = {
 }
 
 var level = 0;
-var levels = [500, 400, 300, 200, 100, 75, 60, 40, 30, 20];
+var levels = [500, 400, 300, 200, 160, 140, 120, 100, 80, 50];
 
 
 var bricksPerRow = 12;
@@ -348,7 +348,7 @@ function loopCycle(){
 		level++;
 		balls++;
 		levelUpTime = 0;
-		if (level == levels.length) level--;
+		if (level == levels.length) endGame(true);
 	}
 
 	var fps = 1000 / (thisLoop - lastLoop);
