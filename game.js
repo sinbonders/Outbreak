@@ -389,11 +389,11 @@ function clickToStart(){
 		return;
 	}
 	context.fillStyle = 'rgb(235,235,235)';
-	context.font = "bold 28pt 'Press Start 2P'";
+	context.font = "bold 21pt 'Press Start 2P'";
 	context.fillText("OUTBREAK", canvas.width/2 - textWidth/2,canvas.height/2-100, textWidth);
-	context.font = "bold 10pt 'Press Start 2P'";
+	context.font = "bold 8pt 'Press Start 2P'";
 	context.fillText("Revenge of the Ball", canvas.width/2 - textWidth/2,canvas.height/2-70, textWidth);
-	context.font = "bold 18pt 'Press Start 2P'";
+	context.font = "bold 11pt 'Press Start 2P'";
 	context.fillText("Click to Start", canvas.width/2 - textWidth/2,canvas.height/2, textWidth);
 	context.fillText("use arrow keys", canvas.width/2 - textWidth/2,canvas.height/2 + 30, textWidth);
 	$('canvas').click(startGame);
@@ -507,7 +507,7 @@ function endGame(win){
 	context.fillStyle = 'rgb(235,235,235)';
 	context.font = "bold 22px 'Press Start 2P'";
 	context.fillText(text, canvas.width/2 - textWidth/2,canvas.height/2, textWidth);
-	context.font = "bold 10pt 'Press Start 2P'";
+	context.font = "bold 9pt 'Press Start 2P'";
 	context.fillText(newHighScore + "High Score: " + highScore, canvas.width/2 - textWidth/2,canvas.height/2 + 50, textWidth);
 	context.fillText("click to restart", canvas.width/2 - textWidth/2,canvas.height/2 + 100, textWidth);
 }
